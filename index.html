@@ -118,7 +118,7 @@ kbd{font-family:inherit;font-size:11px;border:1.5px solid var(--edge);border-bot
 <div class="wrap">
   <header>
     <h1><span class="logo">🍓</span>NGSL <span class="pink">단어</span> 놀이터</h1>
-    <span class="badge" id="wcount">721 단어</span>
+    <span class="row" style="gap:6px"><button class="badge" id="vibBtn" style="cursor:pointer">📳 진동 켜짐</button><span class="badge" id="wcount">721 단어</span></span>
   </header>
 
   <!-- SETUP -->
@@ -229,6 +229,14 @@ const byWord = {}; DATA.forEach(d => byWord[d.w] = d);
 function wordRe(w){ return new RegExp("(?<![A-Za-z])" + w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + "(?![A-Za-z])", w === 'I' ? 'g' : 'gi'); }
 function pickOne(a){ return a[Math.random()*a.length|0]; }
 function confetti(n){ const em=['🌸','💖','⭐','🍓','✨','🎀']; for(let i=0;i<n;i++){ const s=document.createElement('span'); s.className='confetti'; s.textContent=pickOne(em); s.style.left=(Math.random()*100)+'vw'; s.style.animationDuration=(1.4+Math.random()*1.4)+'s'; s.style.animationDelay=(Math.random()*.3)+'s'; document.body.appendChild(s); setTimeout(()=>s.remove(),3200);} }
+let vibOn = true;
+try { vibOn = localStorage.getItem('ngsl_vib') !== 'off'; } catch(e) {}
+function renderVib(){ $('vibBtn').textContent = vibOn ? '📳 진동 켜짐' : '🔕 진동 꺼짐'; $('vibBtn').style.opacity = vibOn ? 1 : .6; }
+function buzz(ms){
+  if (!vibOn) return;
+  try { if (window.AndroidTTS && AndroidTTS.vibrate) { AndroidTTS.vibrate(ms); return; } } catch(e) {}
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e) {}
+}
 function speak(t){ try{ if (window.AndroidTTS) { AndroidTTS.speak(t); return; } speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang='en-US'; u.rate=.9; speechSynthesis.speak(u); }catch(e){} }
 
 /* ---------- setup UI ---------- */
@@ -394,6 +402,7 @@ function revealText(ok, d, ans){
 
 function finish(ok, d, msg){
   answered = true;
+  buzz(ok ? 300 : 70);
   if (ok) {
     okN++;
     if (note[d.w]) { note[d.w]--; if (note[d.w] <= 0) delete note[d.w]; }
@@ -453,6 +462,8 @@ function home(){
 }
 
 $('wcount').textContent = '📚 ' + DATA.length + '단어';
+$('vibBtn').onclick = () => { vibOn = !vibOn; try { localStorage.setItem('ngsl_vib', vibOn ? 'on' : 'off'); } catch(e) {} renderVib(); if (vibOn) buzz(120); };
+renderVib();
 renderNote(); renderLetters();
 </script>
 </body>

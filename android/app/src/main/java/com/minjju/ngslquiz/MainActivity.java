@@ -2,7 +2,10 @@ package com.minjju.ngslquiz;
 
 import android.app.Activity;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.speech.tts.TextToSpeech;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
@@ -45,6 +48,14 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void speak(String text) {
             if (tts != null) tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "ngsl");
+        }
+
+        @JavascriptInterface
+        public void vibrate(int ms) {
+            Vibrator v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+            if (v == null || !v.hasVibrator()) return;
+            if (Build.VERSION.SDK_INT >= 26) v.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE));
+            else v.vibrate(ms);
         }
     }
 
