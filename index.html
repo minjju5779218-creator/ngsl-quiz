@@ -229,7 +229,7 @@ const byWord = {}; DATA.forEach(d => byWord[d.w] = d);
 function wordRe(w){ return new RegExp("(?<![A-Za-z])" + w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + "(?![A-Za-z])", w === 'I' ? 'g' : 'gi'); }
 function pickOne(a){ return a[Math.random()*a.length|0]; }
 function confetti(n){ const em=['🌸','💖','⭐','🍓','✨','🎀']; for(let i=0;i<n;i++){ const s=document.createElement('span'); s.className='confetti'; s.textContent=pickOne(em); s.style.left=(Math.random()*100)+'vw'; s.style.animationDuration=(1.4+Math.random()*1.4)+'s'; s.style.animationDelay=(Math.random()*.3)+'s'; document.body.appendChild(s); setTimeout(()=>s.remove(),3200);} }
-function speak(t){ try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang='en-US'; u.rate=.9; speechSynthesis.speak(u); }catch(e){} }
+function speak(t){ try{ if (window.AndroidTTS) { AndroidTTS.speak(t); return; } speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang='en-US'; u.rate=.9; speechSynthesis.speak(u); }catch(e){} }
 
 /* ---------- setup UI ---------- */
 document.querySelectorAll('.mode').forEach(b => b.onclick = () => {

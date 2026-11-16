@@ -1,0 +1,64 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: 웹앱을 앱 안에 넣기 (글꼴 포함, 오프라인 동작)
+        run: |
+          A=android/app/src/main/assets
+          mkdir -p $A/fonts
+          curl -fsSL -o $A/fonts/Jua-Regular.ttf https://raw.githubusercontent.com/google/fonts/main/ofl/jua/Jua-Regular.ttf || true
+          curl -fsSL -o $A/fonts/GowunDodum-Regular.ttf https://raw.githubusercontent.com/google/fonts/main/ofl/gowundodum/GowunDodum-Regular.ttf || true
+          python3 - <<'PY'
+          import re
+          t = open('index.html', encoding='utf8').read()
+          t = re.sub(r'<link rel="preconnect"[^>]*>\s*', '', t)
+          t = re.sub(r'<link href="https://fonts.googleapis.com[^>]*>', '', t)
+          ff = ("<style>@font-face{font-family:'Jua';src:url('fonts/Jua-Regular.ttf')}"
+                "@font-face{font-family:'Gowun Dodum';src:url('fonts/GowunDodum-Regular.ttf')}</style>")
+          t = t.replace('</head>', ff + '</head>', 1)
+          open('android/app/src/main/assets/index.html', 'w', encoding='utf8').write(t)
+          PY
+
+      - name: APK 빌드
+        working-directory: android
+        run: gradle assembleRelease --no-daemon
+
+      - name: 파일 이름 정리
+        run: cp android/app/build/outputs/apk/release/app-release.apk ngsl-quiz.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ngsl-quiz-apk
+          path: ngsl-quiz.apk
+
+      - name: Releases에 올리기 (latest)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: NGSL 단어 놀이터 APK (최신)
+          body: |
+            휴대폰에서 아래 **ngsl-quiz.apk** 를 눌러 받은 뒤 설치하세요.
+            (처음 한 번은 "출처를 알 수 없는 앱 설치 허용"이 필요해요)
+          files: ngsl-quiz.apk
+          make_latest: true

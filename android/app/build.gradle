@@ -1,0 +1,24 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.minjju.ngslquiz'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.minjju.ngslquiz'
+        minSdk 24
+        targetSdk 34
+        versionCode (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+        versionName "1.0." + (System.getenv('GITHUB_RUN_NUMBER') ?: '0')
+    }
+    signingConfigs {
+        release {
+            storeFile rootProject.file('ngsl.keystore')
+            storePassword 'ngslquiz'
+            keyAlias 'ngsl'
+            keyPassword 'ngslquiz'
+        }
+    }
+    buildTypes {
+        release { minifyEnabled false; signingConfig signingConfigs.release }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
