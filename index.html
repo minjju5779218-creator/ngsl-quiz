@@ -181,11 +181,9 @@ kbd{font-family:inherit;font-size:11px;border:1.5px solid var(--edge);border-bot
     <div class="card">
       <div class="answer"><input id="search" placeholder="🔍 영어나 뜻으로 찾기" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
       <div class="chips" id="sorts" style="margin-top:10px">
-        <button class="chip sel" data-sort="abc" data-l="ABC순">ABC순</button>
-        <button class="chip" data-sort="bad" data-l="많이 틀린 순">많이 틀린 순</button>
-        <button class="chip" data-sort="good" data-l="많이 맞은 순">많이 맞은 순</button>
-        <button class="chip" data-sort="total" data-l="많이 푼 순">많이 푼 순</button>
-        <button class="chip" data-sort="new" data-l="안 풀어본 단어">안 풀어본 단어</button>
+        <button class="chip sel" data-sort="abc" data-l="ABC순" data-r="ZYX순">ABC순</button>
+        <button class="chip" data-sort="good" data-l="많이 맞은 순" data-r="많이 틀린 순">많이 맞은 순</button>
+        <button class="chip" data-sort="total" data-l="많이 푼 순" data-r="안 풀어본 순">많이 푼 순</button>
       </div>
       <p class="hint-text" id="browseInfo"></p>
     </div>
@@ -223,7 +221,7 @@ kbd{font-family:inherit;font-size:11px;border:1.5px solid var(--edge);border-bot
     </div>
 
     <button class="btn full" id="startBtn">시작하기 ✨</button>
-    <p class="hint-text" style="text-align:center">v2.2 · 맞은/틀린 횟수와 오답노트는 이 기기에 자동 저장돼요 · <kbd>Enter</kbd> 제출/다음 · 4지선다는 <kbd>1</kbd>~<kbd>4</kbd></p>
+    <p class="hint-text" style="text-align:center">v2.3 · 맞은/틀린 횟수와 오답노트는 이 기기에 자동 저장돼요 · <kbd>Enter</kbd> 제출/다음 · 4지선다는 <kbd>1</kbd>~<kbd>4</kbd></p>
     <div class="card" style="margin-top:14px">
       <p class="label">📒 오답노트</p>
       <ul class="wlist" id="noteList"></ul>
@@ -571,7 +569,7 @@ function renderSorts(){
   document.querySelectorAll('#sorts .chip').forEach(x => {
     const on = x.dataset.sort === bSort;
     x.classList.toggle('sel', on); x.classList.toggle('rev', on && bRev);
-    x.textContent = x.dataset.l + (on ? (bRev ? ' ▲' : ' ▼') : '');
+    x.textContent = (on && bRev) ? x.dataset.r : x.dataset.l;
   });
 }
 document.querySelectorAll('#sorts .chip').forEach(b => b.onclick = () => {
@@ -586,12 +584,11 @@ function renderBrowse(reset){
     bList = getPool().filter(d => !q || d.w.toLowerCase().includes(q) || d.m.includes(q));
     const abc = (a,b) => a.w.toLowerCase().localeCompare(b.w.toLowerCase());
     const tot = w => st(w)[0] + st(w)[1];
-    if (bSort === 'bad') bList.sort((a,b) => st(b.w)[1]-st(a.w)[1] || st(a.w)[0]-st(b.w)[0] || abc(a,b));
-    else if (bSort === 'good') bList.sort((a,b) => st(b.w)[0]-st(a.w)[0] || st(a.w)[1]-st(b.w)[1] || abc(a,b));
-    else if (bSort === 'total') bList.sort((a,b) => tot(b.w)-tot(a.w) || abc(a,b));
-    else if (bSort === 'new') bList = bList.filter(d => !stats[d.w]).sort(abc);
-    else bList.sort(abc);
-    if (bRev) bList.reverse();
+    if (bSort === 'good' && !bRev) bList.sort((a,b) => st(b.w)[0]-st(a.w)[0] || st(a.w)[1]-st(b.w)[1] || abc(a,b));      // 많이 맞은 순
+    else if (bSort === 'good') bList.sort((a,b) => st(b.w)[1]-st(a.w)[1] || st(a.w)[0]-st(b.w)[0] || abc(a,b));           // 많이 틀린 순
+    else if (bSort === 'total' && !bRev) bList.sort((a,b) => tot(b.w)-tot(a.w) || abc(a,b));                              // 많이 푼 순
+    else if (bSort === 'total') bList.sort((a,b) => tot(a.w)-tot(b.w) || abc(a,b));                                       // 안 풀어본 순
+    else { bList.sort(abc); if (bRev) bList.reverse(); }
     bShown = 0; $('blist').innerHTML = '';
     const tried = bList.filter(d => stats[d.w]).length;
     $('browseInfo').textContent = `${bList.length}개 단어 · 풀어본 단어 ${tried}개 · 단어를 누르면 예문이 보여요`;
