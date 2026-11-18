@@ -111,7 +111,7 @@ header h1 span.pink{color:var(--accent)}
 .pill{display:inline-flex;align-items:center;gap:2px;border-radius:99px;padding:1px 8px;font-size:13px;font-family:'Jua',sans-serif;border:1.5px solid transparent;white-space:nowrap}
 .pill.ok{background:var(--ok-soft);color:#16804f;border-color:#9fdcbf}
 .pill.bad{background:var(--bad-soft);color:#d63c3c;border-color:#f6b0b0}
-.pill.zero{opacity:.35}
+.pill.zero{opacity:.6}
 .blist{list-style:none;padding:0;margin:0;display:grid;gap:8px}
 .bitem{background:#fff;border:2px solid var(--line);border-radius:18px;overflow:hidden}
 .bitem.open{border-color:var(--edge);box-shadow:3px 3px 0 #f7c6d9}
@@ -221,7 +221,7 @@ kbd{font-family:inherit;font-size:11px;border:1.5px solid var(--edge);border-bot
     </div>
 
     <button class="btn full" id="startBtn">시작하기 ✨</button>
-    <p class="hint-text" style="text-align:center">맞은/틀린 횟수와 오답노트는 이 기기에 자동 저장돼요 · <kbd>Enter</kbd> 제출/다음 · 4지선다는 <kbd>1</kbd>~<kbd>4</kbd></p>
+    <p class="hint-text" style="text-align:center">v2.1 · 맞은/틀린 횟수와 오답노트는 이 기기에 자동 저장돼요 · <kbd>Enter</kbd> 제출/다음 · 4지선다는 <kbd>1</kbd>~<kbd>4</kbd></p>
     <div class="card" style="margin-top:14px">
       <p class="label">📒 오답노트</p>
       <ul class="wlist" id="noteList"></ul>
@@ -239,6 +239,7 @@ kbd{font-family:inherit;font-size:11px;border:1.5px solid var(--edge);border-bot
     <div class="qcard">
       <div class="qtype" id="qtype"></div>
       <div id="qbody"></div>
+      <div id="qrec" style="margin-top:14px;font-size:13px;color:var(--sub)"></div>
     </div>
     <div id="abody"></div>
     <div class="fb" id="fb"></div>
@@ -288,6 +289,10 @@ function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)) || {}; }catch
 function lsSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 let stats = lsGet('ngsl_stats_v1');      // { word: [맞은 횟수, 틀린 횟수] }
 let mySent = lsGet('ngsl_mysent_v1');    // { word: ["내 예문", ...] }
+// 업데이트 전에 틀린 기록(오답노트)도 틀린 횟수로 옮겨오기
+if (!localStorage.getItem('ngsl_stats_migrated')) {
+  try { Object.keys(note).forEach(w => { if (!stats[w]) stats[w] = [0, note[w]]; }); localStorage.setItem('ngsl_stats_v1', JSON.stringify(stats)); localStorage.setItem('ngsl_stats_migrated','1'); } catch(e) {}
+}
 const st = w => stats[w] || [0,0];
 function pills(w){ const [o,b] = st(w); return `<span class="pill ok ${o?'':'zero'}">✔ ${o}</span><span class="pill bad ${b?'':'zero'}">✘ ${b}</span>`; }
 
@@ -379,6 +384,7 @@ function show(){
   $('barFill').style.width = (qi / Q.length * 100) + '%';
   $('fb').className = 'fb'; $('fb').innerHTML = '';
   $('nextBtn').classList.add('hide');
+  $('qrec').innerHTML = `이 단어 기록 ${pills(d.w)}`;
   if (curMode === 1) showMode1(d);
   else if (curMode === 2) showMode2(d);
   else showMode3(d);
