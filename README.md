@@ -14,3 +14,6 @@ NGSL-Spoken(721) · New Dolch List(874) · NGSL-Graded Reader(5,000) 단어 5,07
 
 `main`에 올릴 때마다 GitHub Actions가 APK를 자동으로 만듭니다.
 최신 APK: https://github.com/minjju5779218-creator/ngsl-quiz/releases/latest
+
+## 홈 화면 위젯
+홈 화면 빈 곳 길게 누르기 → 위젯 → "영어 단어 놀이" → 🔥 연속 공부 (1×1 / 2×1 / 4×2)

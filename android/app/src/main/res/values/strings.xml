@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">영어 단어 놀이</string>
+    <string name="widget_name">🔥 연속 공부 (4×2)</string>
+    <string name="widget_name_1x1">🔥 연속 공부 (1×1)</string>
+    <string name="widget_name_2x1">🔥 연속 공부 (2×1)</string>
+    <string name="widget_desc">영어 단어 놀이 연속 공부 일수와 이번 주 기록</string>
+</resources>

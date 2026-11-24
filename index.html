@@ -22,6 +22,11 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 header h1{white-space:nowrap;font-size:26px;margin:0;letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
 header h1 .logo{display:inline-grid;place-items:center;width:42px;height:42px;border-radius:14px;background:var(--yellow);border:2.5px solid var(--edge);box-shadow:3px 3px 0 var(--edge);font-size:22px;transform:rotate(-6deg)}
 header h1 span.pink{color:var(--accent)}
+header{gap:10px}
+#streakTip{position:fixed;top:64px;right:14px;z-index:50;background:#fff;border:2.5px solid var(--edge);box-shadow:3px 3px 0 var(--edge);border-radius:16px;padding:10px 14px;font-size:14px;line-height:1.6;color:var(--ink);animation:pop .3s}
+.hbadges{display:flex;gap:8px;align-items:center;flex:none}
+.hbadges .badge{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:32px;padding:0 12px;line-height:1;white-space:nowrap;margin:0;cursor:pointer}
+@media (max-width:420px){header{gap:8px}.hbadges{gap:6px}.hbadges .badge{height:30px;padding:0 9px;font-size:12px}}
 .badge{font-size:13px;color:var(--ink);background:var(--yellow);border:2px solid var(--edge);padding:5px 12px;border-radius:99px;font-family:'Jua',sans-serif}
 .card{background:var(--card);border:2.5px solid var(--edge);border-radius:24px;padding:20px;margin-bottom:16px;box-shadow:5px 5px 0 #f7c6d9}
 .label{font-size:17px;color:var(--ink);margin:0 0 12px;display:flex;align-items:center;gap:6px}
@@ -158,7 +163,7 @@ kbd{font-family:inherit;font-size:11px;border:1.5px solid var(--edge);border-bot
 <div class="wrap">
   <header>
     <h1><span class="logo">🍓</span>영어 <span class="pink">단어</span> 놀이</h1>
-    <button class="badge" id="vibBtn" style="cursor:pointer;white-space:nowrap">📳 진동 켜짐</button>
+    <div class="hbadges"><span class="badge" id="streakCard"></span><button class="badge" id="vibBtn">📳 진동 ON</button></div>
   </header>
 
   <div class="tabs" id="tabs">
@@ -263,7 +268,7 @@ kbd{font-family:inherit;font-size:11px;border:1.5px solid var(--edge);border-bot
     </div>
 
     <button class="btn full" id="startBtn">시작하기 ✨</button>
-    <p class="hint-text" style="text-align:center">v3.2 · 맞은/틀린 횟수와 오답노트는 이 기기에 자동 저장돼요 · <kbd>Enter</kbd> 제출/다음 · 4지선다는 <kbd>1</kbd>~<kbd>4</kbd></p>
+    <p class="hint-text" style="text-align:center">v3.3 · 맞은/틀린 횟수와 오답노트는 이 기기에 자동 저장돼요 · <kbd>Enter</kbd> 제출/다음 · 4지선다는 <kbd>1</kbd>~<kbd>4</kbd></p>
     <div class="card" style="margin-top:14px">
       <p class="label">📒 오답노트</p>
       <ul class="wlist" id="noteList"></ul>
@@ -343,6 +348,31 @@ function saveNote(n){ try{ localStorage.setItem(LS_KEY, JSON.stringify(n)); }cat
 let note = loadNote();
 function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)) || {}; }catch(e){ return {}; } }
 function lsSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+let days = lsGet('ngsl_days_v1');   // {'2026-11-24': 푼 문제 수}
+const dkey = t => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+const DAY = 864e5;
+function streakInfo(){
+  const now = Date.now(), today = dkey(now);
+  let n = 0, t = days[today] ? now : now - DAY;
+  while (days[dkey(t)]) { n++; t -= DAY; }
+  let best = 0, run = 0; const ks = Object.keys(days).sort(); let prev = null;
+  ks.forEach(k => { const cur = new Date(k + 'T12:00:00').getTime(); run = prev !== null && Math.round((cur - prev) / DAY) === 1 ? run + 1 : 1; best = Math.max(best, run); prev = cur; });
+  return {n, best, today: days[today] || 0, total: ks.length};
+}
+function pushDays(){ try { if (window.AndroidTTS && AndroidTTS.saveDays) AndroidTTS.saveDays(JSON.stringify(days)); } catch(e) {} }
+function markStudy(){
+  const k = dkey(Date.now()), first = !days[k];
+  days[k] = (days[k] || 0) + 1; lsSet('ngsl_days_v1', days);
+  pushDays(); renderStreak();
+  return first;
+}
+function renderStreak(){
+  const s = streakInfo(), el = document.getElementById('streakCard');
+  el.textContent = `🔥 ${s.n}일`;
+  el.style.opacity = s.today ? 1 : .55;
+  el.title = s.today ? `오늘 ${s.today}문제 완료 · 최고 ${s.best}일 연속` : '오늘 아직 안 했어요';
+}
+let streakUp = false;
 let stats = lsGet('ngsl_stats_v1');      // { word: [맞은 횟수, 틀린 횟수] }
 let mySent = lsGet('ngsl_mysent_v1');    // { word: ["내 예문", ...] }
 // 업데이트 전에 틀린 기록(오답노트)도 틀린 횟수로 옮겨오기
@@ -658,6 +688,7 @@ function finish(ok, d, msg){
     note[d.w] = (note[d.w] || 0) + 1;
   }
   saveNote(note);
+  if (markStudy()) streakUp = true;
   const s0 = st(d.w).slice(); s0[ok?0:1]++; stats[d.w] = s0; lsSet('ngsl_stats_v1', stats);
   msg += `<div style="margin-top:6px">이 단어 기록 ${pills(d.w)}</div>`;
   $('fb').className = 'fb ' + (ok ? 'ok' : 'bad');
@@ -699,6 +730,7 @@ function showResult(early){
   $('resPct').textContent = total ? pct + '%' : '-';
   $('resEmoji').textContent = pct >= 90 ? '🏆' : pct >= 70 ? '🥳' : pct >= 50 ? '😊' : '🐣';
   if (pct >= 70) confetti(24);
+  if (streakUp) { streakUp = false; const si = streakInfo(); $('resMode').textContent += ` · 🔥 ${si.n}일 연속 공부 달성!`; confetti(16); }
   $('resWrongCard').classList.toggle('hide', !wrongList.length);
   $('resWrong').innerHTML = wrongList.map(d => `<li><span class="en">${esc(d.w)} <span style="font-size:12px">${pills(d.w)}</span></span><span class="ko">${esc(d.m)}</span></li>`).join('');
   $('retryWrong').classList.toggle('hide', !wrongList.length);
@@ -810,7 +842,15 @@ function addSent(li){
 
 $('vibBtn').onclick = () => { vibOn = !vibOn; try { localStorage.setItem('ngsl_vib', vibOn ? 'on' : 'off'); } catch(e) {} renderVib(); if (vibOn) buzz(120); };
 renderVib();
-renderModes(); renderNote(); renderLetters();
+renderModes(); renderNote(); renderLetters(); renderStreak(); pushDays();
+$('streakCard').onclick = () => {
+  const s = streakInfo(); let tip = document.getElementById('streakTip');
+  if (tip) { tip.remove(); return; }
+  tip = document.createElement('div'); tip.id = 'streakTip';
+  tip.innerHTML = `🔥 지금 <b>${s.n}일</b> 연속 공부 중<br>🏆 최고 기록 ${s.best}일 · 📅 공부한 날 ${s.total}일<br>✏️ 오늘 푼 문제 ${s.today}개` + (s.today ? '' : '<br><span style="color:var(--accent-d)">오늘 한 문제만 풀어도 이어져요!</span>');
+  document.body.appendChild(tip); setTimeout(() => tip && tip.remove(), 4000);
+};
+document.addEventListener('visibilitychange', () => { if (!document.hidden) renderStreak(); });
 </script>
 </body>
 </html>

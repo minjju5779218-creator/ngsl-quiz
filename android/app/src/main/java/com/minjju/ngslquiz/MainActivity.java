@@ -1,6 +1,7 @@
 package com.minjju.ngslquiz;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -57,6 +58,19 @@ public class MainActivity extends Activity {
             if (Build.VERSION.SDK_INT >= 26) v.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE));
             else v.vibrate(ms);
         }
+
+        @JavascriptInterface
+        public void saveDays(String json) {
+            SharedPreferences p = getSharedPreferences(StreakWidget.PREFS, MODE_PRIVATE);
+            p.edit().putString(StreakWidget.KEY_DAYS, json).apply();
+            StreakWidget.updateAll(MainActivity.this);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        StreakWidget.updateAll(this);
     }
 
     @Override
